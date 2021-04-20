@@ -10,7 +10,7 @@
  *
  * File contributors : Ulrich Kühne, Étienne André, Laure Petrucci, Dylan Marinho
  * Created           : 2009/09/07
- * Last modified     : 2021/02/24
+ * Last modified     : 2021/04/20
  *
  ************************************************************)
 
@@ -208,6 +208,13 @@ begin match property_option, options#imitator_mode with
 				options#set_merge (merge_needed);
 			);
 		);
+		(* Update if not yet set *)
+		if not options#is_set_merge212 then (
+			(* Print some information *)
+			print_message Verbose_high ("Case option `-merge212` not set");
+
+			options#set_merge212(false);
+		);
 
 	| _, State_space_computation
 		->
@@ -225,6 +232,13 @@ begin match property_option, options#imitator_mode with
 				(*** BADPROG: this default option value should not be hard-coded here ***)
 				options#set_merge(false);
 			);
+		);
+		(* Update if not yet set *)
+		if not options#is_set_merge212 then (
+			(* Print some information *)
+			print_message Verbose_high ("Case option `-merge212` not set");
+
+			options#set_merge212(false);
 		);
 	| None, _ -> ()
 end;
