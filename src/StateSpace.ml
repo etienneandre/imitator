@@ -9,7 +9,7 @@
  *
  * File contributors : Étienne André, Jaime Arias, Ulrich Kühne
  * Created           : 2009/12/08
- * Last modified     : 2021/03/19
+ * Last modified     : 2021/04/20
  *
  ************************************************************)
 
@@ -208,6 +208,11 @@ let statespace_dcounter_nb_states_including = create_discrete_counter_and_regist
 let nb_merging_attempts = create_discrete_counter_and_register "StateSpace.merging attempts" States_counter Verbose_standard
 (* Numbers of actual merges *)
 let nb_merged = create_discrete_counter_and_register "StateSpace.merges" States_counter Verbose_standard
+
+(* Complete time for merging *)
+let tcounter_merge = create_time_counter_and_register "StateSpace.Merge time" States_counter Verbose_standard
+(* Complete time for state space reconstruction while merging *)
+let tcounter_merge_statespace = create_time_counter_and_register "StateSpace.Merge (reconstruct state space)" States_counter Verbose_standard
 
 (* Functions *)
 let counter_add_state = create_hybrid_counter_and_register "StateSpace.add_state" States_counter Verbose_experiments
@@ -1487,6 +1492,8 @@ let add_p_constraint_to_states state_space p_constraint =
 
 (* Merges states in queue with states in state space. Removes unreachable states. Returns unmerged part of queue *)
 let merge state_space queue =
+	(* Statistics *)
+	tcounter_merge#start;
 
 (* Check if two states can be merged *)
 (*** NOTE: with side-effects! ***)
@@ -1600,7 +1607,16 @@ in
 					main_merger ss;
 					if Hashtbl.mem state_space.all_states s then (* treat s only if it is still reachable *)
 					let eaten = merge_state s in
-					if eaten <> [] then copy_and_reduce state_space s eaten
+					if eaten <> [] then(
+						(* Statistics *)
+						tcounter_merge_statespace#start;
+						
+						(* Reconstruct state space *)
+						copy_and_reduce state_space s eaten;
+						
+						(* Statistics *)
+						tcounter_merge_statespace#stop;
+					)
 				     end
 in
 	(* Do it! main function of StateSpace.merge *)
@@ -1618,6 +1634,10 @@ in
 		"[Merge] " ^ (string_of_int diff_states) ^ " states merged ("
 		^ (string_of_int diff_explored) ^ " explored, " ^ (string_of_int diff_queue) ^ " queued), out of "
 		^ (string_of_int orig_nb_states) ^ " states (" ^ (string_of_int orig_nb_queue) ^ " in queue)");
+	
+	(* Statistics *)
+	tcounter_merge#stop;
+
 	(* return *)
 	new_queue
 
