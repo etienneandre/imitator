@@ -1641,6 +1641,7 @@ in
 	(* return *)
 	new_queue
 
+
 (** Empties the hash table giving the set of states for a given location; optimization for the jobshop example, where one is not interested in comparing  a state of iteration n with states of iterations < n *)
 let empty_states_for_comparison state_space =
 	(* Statistics *)
