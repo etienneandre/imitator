@@ -1,15 +1,15 @@
 (************************************************************
  *
  *                       IMITATOR
- * 
+ *
  * Laboratoire Spécification et Vérification (ENS Cachan & CNRS, France)
  * Université Paris 13, LIPN, CNRS, France
- * 
+ *
  * Module description: Description of the symbolic states and of the state space
- * 
- * File contributors : Étienne André
+ *
+ * File contributors : Étienne André, Dylan Marinho
  * Created           : 2009/12/08
- * Last modified     : 2020/09/23
+ * Last modified     : 2021/05/05
  *
  ************************************************************)
 
@@ -119,7 +119,7 @@ type impossible_concrete_run = {
 (************************************************************)
 
 (*** WARNING: the structure is here (state, transition) followed by final state, but in concrete_run, it is initial state followed by (transition, state) list :( ***)
- 
+
 type symbolic_step = {
 	source			: State.state_index;
 	transition		: combined_transition;
@@ -264,7 +264,7 @@ val forall_state: (state -> bool) -> state_space -> bool*)
 (*------------------------------------------------------------*)
 (** Find all "last" states on finite or infinite runs *)
 (*------------------------------------------------------------*)
-val last_states: AbstractModel.abstract_model -> state_space -> state_index list 
+val last_states: AbstractModel.abstract_model -> state_space -> state_index list
 
 (** Check if bad states are reached *)
 (* val is_bad: abstract_model -> state_space -> bool *)
@@ -323,6 +323,8 @@ val add_p_constraint_to_states : state_space -> LinearConstraint.p_linear_constr
 
 (* Merges states in queue with states in state space. Removes unreachable states. Returns unmerged part of queue *)
 val merge : state_space -> state_index list -> state_index list
+(* Merge of v2.12 (ULRICH) *)
+val merge212 : state_space -> state_index list -> state_index list
 
 (** Empties the hash table giving the set of states for a given location; optimization for the jobshop example, where one is not interested in comparing  a state of iteration n with states of iterations < n *)
 val empty_states_for_comparison : state_space -> unit
