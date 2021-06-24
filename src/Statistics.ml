@@ -4,6 +4,7 @@
  * 
  * Laboratoire Spécification et Vérification (ENS Cachan & CNRS, France)
  * Université Paris 13, LIPN, CNRS, France
+ * Université de Lorraine, CNRS, Inria, LORIA, Nancy, France
  * 
  * Module description: Timed counter, that depends on a level of verbosity (the counter will only update when the global verbose_mode is larger or equal to that of the counter). Also maintains a list of all counters, for obtaining statistics easily.
  * 
@@ -11,7 +12,7 @@
  * Created           : 2014/04/27
  * Fork from         : Counter.ml
  * Fork date         : 2016/05/17
- * Last modified     : 2017/02/15
+ * Last modified     : 2021/06/24
  *
  ************************************************************)
 
@@ -303,6 +304,45 @@ end
 
 (************************************************************)
 (************************************************************)
+(* Class definition for data *)
+(************************************************************)
+(************************************************************)
+class data_recorder (name : string) (counter_category : counterCategory) (level : ImitatorUtilities.verbose_mode) =
+	object(self) inherit counter name counter_category level as super
+
+	(************************************************************)
+	(* Class variables *)
+	(************************************************************)
+	val mutable recorded_data = ""
+	
+	
+	(************************************************************)
+	(* Class methods *)
+	(************************************************************)
+
+	(*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*)
+	(** Add data *)
+	(*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*)
+	method add_data (data : string) : unit =
+		(* Enqueue new data to previously recorded data *)
+		recorded_data <- recorded_data ^ data
+
+
+	(*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*)
+	(** Get the available data *)
+	(*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*)
+	method string_of_value : string =
+		recorded_data
+
+(************************************************************)
+(************************************************************)
+end
+(************************************************************)
+(************************************************************)
+
+
+(************************************************************)
+(************************************************************)
 (* Class-independent global variables *)
 (************************************************************)
 (************************************************************)
@@ -394,15 +434,17 @@ let create_discrete_counter_and_register (name : string) (counter_category : cou
 	(* Create counter *)
 	let my_new_counter = new discreteCounter name counter_category level in
 
+	(* Register *)
+	register my_new_counter;
+
 	(* Print some information *)
 	print_message Verbose_low ("Registered counter " ^ name ^ ".");
-	register my_new_counter;
 	
 	(* Return counter *)
 	my_new_counter
 
 
-	let create_hybrid_counter_and_register (name : string) (counter_category : counterCategory) (level : ImitatorUtilities.verbose_mode) =
+let create_hybrid_counter_and_register (name : string) (counter_category : counterCategory) (level : ImitatorUtilities.verbose_mode) =
 	(* Create counter *)
 	let my_new_counter = new hybridCounter name counter_category level in
 
@@ -421,12 +463,26 @@ let create_discrete_counter_and_register (name : string) (counter_category : cou
 	my_new_counter
 
 
+let create_data_recorder_and_register (name : string) (counter_category : counterCategory) (level : ImitatorUtilities.verbose_mode) =
+	(* Create data_recorder *)
+	let my_new_data_recorder = new data_recorder name counter_category level in
+
+	(* Register *)
+	register my_new_data_recorder;
+	
+	(* Print some information *)
+	print_message Verbose_low ("Registered data recorder " ^ name ^ ".");
+	
+	(* Return *)
+	my_new_data_recorder
+
+
 (** Retrieve all counters of a category *)
 (*** NOTE: not smart programming (we have to go through the entire list of counters once for each category) but, come on, there are relatively few counters and few categories… ***)
 let get_counters_by_category counter_category =
 	List.filter (fun counter -> counter#category = counter_category) !all_counters
 
-(** Enable all counters (past and future), independently of their verbose level; typicaly, this function will be called if -statistics option is enabled *)
+(** Enable all counters (past and future), independently of their verbose level; typically, this function will be called if -statistics option is enabled *)
 let enable_all_counters () =
 	all_counters_enabled := true
 
@@ -451,6 +507,7 @@ let string_of_all_counters () =
 			result := !result ^ "\n------------------------------------------------------------"
 				^ "\n Statistics: " ^ (string_of_category category)
 				^ "\n------------------------------------------------------------";
+			(* Print all counters *)
 			List.iter (fun counter ->
 				(* Only print suitable counters *)
 				if !all_counters_enabled || verbose_mode_greater counter#level then(
