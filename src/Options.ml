@@ -10,7 +10,7 @@
  *
  * File contributors : Ulrich Kühne, Étienne André, Laure Petrucci, Dylan Marinho
  * Created           : 2010
- * Last modified     : 2021/07/05
+ * Last modified     : 2021/07/08
  *
  ************************************************************)
 
@@ -201,6 +201,9 @@ class imitator_options =
 		(* Merging states on the fly (after pi0-compatibility check) *)
 (* 		val mutable merge_before = false *)
 
+		val mutable merge_n1 : int					= AbstractAlgorithm.undefined_merge_n
+		val mutable merge_n2 : int					= AbstractAlgorithm.undefined_merge_n
+
 		(* Merging heuristic *)
 		val mutable merge_heuristic					= Merge_iter10
 
@@ -305,6 +308,9 @@ class imitator_options =
 		method layer								= value_of_option "layer" layer
 		method is_set_layer							= layer <> None
 		method set_layer b							= layer <- Some b
+
+		method merge_n1								= merge_n1
+		method merge_n2								= merge_n1
 
 		method merge								= value_of_option "merge" merge
 		method is_set_merge							= merge <> None
@@ -788,7 +794,10 @@ class imitator_options =
 				("-no-merge", Unit (fun () -> warn_if_set merge "merge"; merge <- Some false), " Do not use the merging technique of [AFS13]. Default: depending on the algorithm.
 				");
 
-(*				("-merge-before", Unit (fun () -> merge_before <- true) , " Use the merging technique of [AFS13] but merges states before pi0-compatibility test (EXPERIMENTAL). Default: disabled (disable)");*)
+				("-merge-n1", Int (fun i -> merge_n1 <- i), " value for merge:n1 [WORK IN PROGRESS]"); (*** TODO: explain***)
+				("-merge-n2", Int (fun i -> merge_n2 <- i), " value for merge:n2 [WORK IN PROGRESS]"); (*** TODO: explain***)
+
+				(*				("-merge-before", Unit (fun () -> merge_before <- true) , " Use the merging technique of [AFS13] but merges states before pi0-compatibility test (EXPERIMENTAL). Default: disabled (disable)");*)
 
 				("-mergeq", Unit (fun () -> warn_if_set mergeq "mergeq"; mergeq <- Some true; merge <- Some true), "Use the merging technique of [AFS13] on the queue only. Default: depending on the algorithm");
 				("-no-mergeq", Unit (fun () -> warn_if_set mergeq "mergeq"; mergeq <- Some false), " Do not use the merging technique of [AFS13] on the queue only. Default: depending on the algorithm.

@@ -10,7 +10,7 @@
  *
  * File contributors : Étienne André, Laure Petrucci
  * Created:       2012/05/10
- * Last modified: 2021/04/20
+ * Last modified: 2021/07/08
  *
  ************************************************************)
 
@@ -77,6 +77,13 @@ class imitator_options :
 		method merge212						: bool
 		method is_set_merge212				: bool
 		method set_merge212					: bool -> unit
+
+		method merge_n1						: int
+		method merge_n2						: int
+
+(*		method merge_heuristic				: bool
+		method is_set_merge					: bool
+		method set_merge					: bool -> unit*)
 
 		(* 		method merge_before : bool *)
 		method merge_heuristic				: merge_heuristic

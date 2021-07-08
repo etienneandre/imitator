@@ -8,7 +8,7 @@
  *
  * File contributors : Étienne André, Dylan Marinho
  * Created           : 2019/12/18
- * Last modified     : 2021/02/24
+ * Last modified     : 2021/07/08
  *
  ************************************************************)
 
@@ -124,6 +124,9 @@ type merge_heuristic =
 	| Merge_iter10
 	(** Merge_always: merge after every 100th processed state *)
 	| Merge_iter100
+
+(* Undefined value for n1/n2 merge heuristics *)
+let undefined_merge_n = -1
 
 
 (** Style of graphical state space to output *)
