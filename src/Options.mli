@@ -80,13 +80,13 @@ class imitator_options :
 
 		method merge_n1						: int
 		method merge_n2						: int
-
-(*		method merge_heuristic				: bool
-		method is_set_merge					: bool
-		method set_merge					: bool -> unit*)
+		
+		method merge_algorithm				: AbstractAlgorithm.merge_algorithm
 
 		(* 		method merge_before : bool *)
+		(* Merging heuristic for EFsynthminpq *)
 		method merge_heuristic				: merge_heuristic
+		
 		method model_file_name				: string
 		method model_local_file_name		: string
 		method no_acceptfirst				: bool

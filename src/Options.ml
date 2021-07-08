@@ -204,7 +204,10 @@ class imitator_options =
 		val mutable merge_n1 : int					= AbstractAlgorithm.undefined_merge_n
 		val mutable merge_n2 : int					= AbstractAlgorithm.undefined_merge_n
 
-		(* Merging heuristic *)
+		(* Merging algorithm for reachability synthesis *)
+		val mutable merge_algorithm : AbstractAlgorithm.merge_algorithm = Merge_none
+
+		(* Merging heuristic for EFsynthminpq *)
 		val mutable merge_heuristic					= Merge_iter10
 
 		(* Method for NZ algorithms *)
@@ -311,6 +314,8 @@ class imitator_options =
 
 		method merge_n1								= merge_n1
 		method merge_n2								= merge_n1
+		
+		method merge_algorithm						= merge_algorithm
 
 		method merge								= value_of_option "merge" merge
 		method is_set_merge							= merge <> None
@@ -325,7 +330,9 @@ class imitator_options =
 		method set_merge212 b						= merge212 <- Some b
 
 (* 		method merge_before = merge_before *)
+		(* Merging heuristic for EFsynthminpq *)
 		method merge_heuristic						= merge_heuristic
+		
 		method model_file_name						= model_file_name
 		method model_local_file_name				= model_local_file_name
 		method nb_args								= nb_args

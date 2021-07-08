@@ -107,6 +107,7 @@ type pending_order =
 	| Pending_zone
 
 
+(* Merging heuristic for EFsynthminpq *)
 type merge_heuristic =
 	(** Merge_always: merge after every processed state *)
 	| Merge_always
@@ -123,6 +124,15 @@ type merge_heuristic =
 
 (* Undefined value for n1/n2 merge heuristics *)
 val undefined_merge_n : int
+
+(* Merge heuristics for reachability analysis *)
+type merge_algorithm =
+	(** None *)
+	| Merge_none
+	(** TODO: description *)
+	| Merge_static
+	(** TODO: description *)
+	| Merge_exponentialbackoff
 
 (** Style of graphical state space to output *)
 type graphical_state_space =
