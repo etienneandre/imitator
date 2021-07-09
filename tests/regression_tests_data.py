@@ -14,7 +14,7 @@
 # File contributors : Étienne André, Jaime Arias, Benjamin Loillier
 #
 # Created           : 2015/10/23
-# Last modified     : 2021/07/05
+# Last modified     : 2021/07/09
 #************************************************************
 
 
@@ -666,7 +666,7 @@ var
 		: clock;
 
 	i
-		: discrete;
+		: rational;
 
 	p
 		: parameter;
@@ -747,7 +747,7 @@ var
 		: clock;
 
 	j, i
-		: discrete;
+		: rational;
 
 	p
 		: parameter;
@@ -831,7 +831,7 @@ var
 		: clock;
 
 	j, i
-		: discrete;
+		: rational;
 
 	p
 		: parameter;
@@ -988,6 +988,54 @@ Number of clocks                        : 3
 
 	,
 
+
+	#------------------------------------------------------------
+	{
+		# Test version             : 1
+		# Test since               : 2021/07/08
+		# Last modified            : 2021/07/08
+		# Test for IMITATOR version: 3.1
+		'purpose'    : 'Test variable removal for event-recording automata',
+		'input_files': ['LALSD14_AIP.imi'],
+		'options'    : '-mode checksyntax ',
+		'expectations' : [
+			{'file': 'LALSD14_AIP.res' , 'content' : """
+Number of clocks                        : 4
+		"""
+			} # end result file
+			,
+		] # end expectations
+	} # end test case
+	#------------------------------------------------------------
+
+	,
+	
+	#------------------------------------------------------------
+	{
+		# Test version             : 1
+		# Test since               : 2021/07/08
+		# Last modified            : 2021/07/08
+		# Test for IMITATOR version: 3.1
+		'purpose'    : 'Test variable removal for various types',
+		'input_files': ['test_removal.imi'],
+		'options'    : '-mode checksyntax ',
+		'expectations' : [
+			{'file': 'test_removal.res' , 'content' : """
+Number of clocks                        : 1
+		"""
+			} # end result file
+			,
+			{'file': 'test_removal.res' , 'content' : """
+Number of parameters                    : 1
+Number of discrete variables            : 1
+		"""
+			} # end result file
+			,
+		] # end expectations
+	} # end test case
+	#------------------------------------------------------------
+
+	,
 
 	#*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-
 	# STATE SPACE GENERATION
@@ -14649,7 +14697,7 @@ var
 		: int;
 
 	i, j
-		: discrete;
+		: rational;
 
 
 (************************************************************)

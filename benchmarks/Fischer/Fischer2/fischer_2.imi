@@ -15,10 +15,10 @@
  * License          : Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
  * 
  * Created          : < 2012/02/14
- * Last modified    : 2020/08/14
+ * Last modified    : 2021/07/09
  * Model version    : 
  * 
- * IMITATOR version : 3
+ * IMITATOR version : 3.1
  ******************************************************************************)
 
 
@@ -33,7 +33,7 @@ var
 
 (* Discrete *)
 	k
-		: discrete;
+		: int;
 
 (* Parameters *)
 	a,
@@ -58,8 +58,7 @@ loc start: invariant x1<=a
 
 loc check: invariant True
 	when k=1 & x1>=b sync enter1 goto CS;
-	when k<1 & x1>=b sync abort1 goto idle;
-	when k>1 & x1>=b sync abort1 goto idle;
+	when k<>1 & x1>=b sync abort1 goto idle;
 	when True sync tau goto check;
 
 loc CS: invariant True
@@ -83,8 +82,7 @@ loc start: invariant x2<=a
 
 loc check: invariant True
 	when k=2 & x2>=b sync enter2 goto CS;
-	when k<2 & x2>=b sync abort2 goto idle;
-	when k>2 & x2>=b sync abort2 goto idle;
+	when k<>2 & x2>=b sync abort2 goto idle;
 	when True sync tau goto check;
 
 loc CS: invariant True
@@ -114,31 +112,38 @@ end
 (* Initial state *)
 (************************************************************)
 
-init :=
-	(*------------------------------------------------------------*)
-	(* Initial location *)
-	(*------------------------------------------------------------*)
-	& loc[proc1] = idle
-	& loc[proc2] = idle
-	& loc[arbitrer] = loc_arbitrer
 
-	(*------------------------------------------------------------*)
-	(* Initial discrete assignments *)
-	(*------------------------------------------------------------*)
-	& k=0
+init := {
+	
+    discrete =
+		(*------------------------------------------------------------*)
+		(* Initial location *)
+		(*------------------------------------------------------------*)
+		loc[proc1]		:= idle,
+		loc[proc2]		:= idle,
+		loc[arbitrer]	:= loc_arbitrer,
 
-	(*------------------------------------------------------------*)
-	(* Initial clock constraints *)
-	(*------------------------------------------------------------*)
-	& x1 = 0
-	& x2 = 0
+		(*------------------------------------------------------------*)
+		(* Initial discrete variables assignments *)
+		(*------------------------------------------------------------*)
+		k := 0,
 
-	(*------------------------------------------------------------*)
-	(* Parameter constraints *)
-	(*------------------------------------------------------------*)
-	& a >= 0
-	& b >= 0
-;
+    ;
+
+    continuous =        
+		(*------------------------------------------------------------*)
+		(* Initial clock constraints *)
+		(*------------------------------------------------------------*)
+		& x1 = 0
+		& x2 = 0
+
+		(*------------------------------------------------------------*)
+		(* Parameter constraints *)
+		(*------------------------------------------------------------*)
+		& a >= 0
+		& b >= 0
+	;
+}
 
 
 (************************************************************)

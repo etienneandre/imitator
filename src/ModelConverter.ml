@@ -1485,7 +1485,7 @@ let get_variables_and_constants var_type =
         (* If no value: add to names *)
         | None -> (name :: current_list , constants)
         (* Otherwise: add to constants : name * value * var_type *)
-        | Some value -> (current_list , (name, value, var_type) :: constants)
+        | Some value -> (current_list , constants @ [(name, value, var_type)])
       ) ([], [])
 
 let get_declared_variable_names variable_declarations =
@@ -1795,52 +1795,67 @@ let check_update (useful_parsing_model_information : useful_parsing_model_inform
         (* Check whether this variable is to be removed because unused elswhere than in resets *)
         let to_be_removed = List.mem variable_name removed_variable_names in
 
-
+        (* TODO benjamin REFACTOR conditional ugly ! *)
         if to_be_removed then
             true
         else (
-            (* Get variable type, if possible *)
-            let variable_type =
-                if List.mem variable_name variable_names then (
-                    let index = Hashtbl.find index_of_variables variable_name in
-                    Some (type_of_variables index)
-                ) else if Hashtbl.mem constants variable_name then (
-                    let value = Hashtbl.find constants variable_name in
-                    Some (DiscreteValue.var_type_of_value value)
-                ) else
-                    None
-            in
 
-			match variable_type with
-			(* Type clock: allow any linear term in updates: so just check that variables have been declared *)
-			| Some DiscreteValue.Var_type_clock ->
-			    print_message Verbose_total ("                A clock!");
-			    ParsingStructureUtilities.all_variables_defined_in_parsed_global_expression variable_infos global_expression
+            let all_variables_defined = ParsingStructureUtilities.all_variables_defined_in_parsed_global_expression variable_infos global_expression in
 
-			(* Case of a discrete var.: allow only an arithmetic expression of constants and discrete *)
-			| Some DiscreteValue.Var_type_discrete var_type_discrete ->
-			    let string_of_var_type = DiscreteValue.string_of_var_type_discrete var_type_discrete in
-			    print_message Verbose_total ("                A " ^ string_of_var_type ^ "!");
+            if not all_variables_defined then (
+                (* TODO benjamin IMPROVE get variable name as before ! *)
+                print_error ("A variable used in update \"" ^ variable_name ^ " := " ^ ParsingStructureUtilities.string_of_parsed_global_expression variable_infos global_expression ^ "\" in automaton `" ^ automaton_name ^ "` was not declared.");
+                false
+            ) else (
 
-			    let all_defined = ParsingStructureUtilities.all_variables_defined_in_parsed_global_expression variable_infos global_expression in
-
-			    if not all_defined then
-			        false
-                else (
-                    let result = check_only_discretes_in_parsed_global_expression index_of_variables type_of_variables constants global_expression in
-                    if not result then (
-                        print_error ("The variable `" ^ variable_name ^ "` is a discrete and its update can only be an arithmetic expression over constants and discrete variables in automaton `" ^ automaton_name ^ "`."); false
+                (* Get variable type, if possible *)
+                let variable_type =
+                    if List.mem variable_name variable_names then (
+                        let index = Hashtbl.find index_of_variables variable_name in
+                        Some (type_of_variables index)
+                    ) else if Hashtbl.mem constants variable_name then (
+                        let value = Hashtbl.find constants variable_name in
+                        Some (DiscreteValue.var_type_of_value value)
+                    ) else (
+                        None
                     )
+                in
+
+
+
+                match variable_type with
+                (* Type clock: allow any linear term in updates: so just check that variables have been declared *)
+                | Some DiscreteValue.Var_type_clock ->
+                    print_message Verbose_total ("                A clock!");
+                    (* TODO benjamin REFACTOR change to true, because it was checked before *)
+                    ParsingStructureUtilities.all_variables_defined_in_parsed_global_expression variable_infos global_expression
+
+                (* Case of a discrete var.: allow only an arithmetic expression of constants and discrete *)
+                | Some DiscreteValue.Var_type_discrete var_type_discrete ->
+                    let string_of_var_type = DiscreteValue.string_of_var_type_discrete var_type_discrete in
+                    print_message Verbose_total ("                A " ^ string_of_var_type ^ "!");
+
+                    (* TODO benjamin REFACTOR change to true, because it was checked before *)
+                    let all_defined = ParsingStructureUtilities.all_variables_defined_in_parsed_global_expression variable_infos global_expression in
+
+                    if not all_defined then
+                        false
                     else (
-                        print_message Verbose_total ("                Check passed.");
-                        true
+                        let result = check_only_discretes_in_parsed_global_expression index_of_variables type_of_variables constants global_expression in
+                        if not result then (
+                            print_error ("The variable `" ^ variable_name ^ "` is a discrete and its update can only be an arithmetic expression over constants and discrete variables in automaton `" ^ automaton_name ^ "`."); false
+                        )
+                        else (
+                            print_message Verbose_total ("                Check passed.");
+                            true
+                        )
                     )
-			    )
-			(* Case of a parameter: forbidden! *)
-			| Some DiscreteValue.Var_type_parameter ->
-			    print_error ("The variable `" ^ variable_name ^ "` is a parameter and cannot be updated in automaton `" ^ automaton_name ^ "`."); false
-            | None ->
-                print_error ("The variable `" ^ variable_name ^ "` used in an update in automaton `" ^ automaton_name ^ "` was not declared."); false
+                (* Case of a parameter: forbidden! *)
+                | Some DiscreteValue.Var_type_parameter ->
+                    print_error ("The variable `" ^ variable_name ^ "` is a parameter and cannot be updated in automaton `" ^ automaton_name ^ "`."); false
+                | None ->
+                    print_error ("The variable `" ^ variable_name ^ "` used in an update in automaton `" ^ automaton_name ^ "` was not declared."); false
+            )
         )
     in
 
@@ -4999,6 +5014,7 @@ let abstract_structures_of_parsing_structures options (parsed_model : ParsingStr
         type_of_variables = fun i -> DiscreteValue.Var_type_discrete (DiscreteValue.Var_type_discrete_number DiscreteValue.Var_type_discrete_rational);
     }
     in
+
     (* Evaluate the constants init expressions *)
     let evaluated_constants = List.map (fun (name, expr, var_type) ->
 
@@ -5022,15 +5038,20 @@ let abstract_structures_of_parsing_structures options (parsed_model : ParsingStr
         let value = ParsingStructureUtilities.try_reduce_parsed_global_expression initialized_constants converted_expr in
         (* Create evaluated constant tuple *)
         let evaluated_constant = name, expr, value, var_type in
+
+        let name, value = TypeChecker.check_constant_declaration evaluated_constant in
         (* Add evaluated constant to hash table *)
         Hashtbl.add initialized_constants name value;
         (* Return *)
-        evaluated_constant
+        name, value
     ) (List.rev constants) in
+
+
 
     (* TYPE CHECKING : CONSTANTS IN DECLARATION *)
     (* Check type consistency between constant type and value *)
-    let constant_tuples = TypeChecker.check_constant_declarations evaluated_constants in
+(*    let constant_tuples = TypeChecker.check_constant_declarations evaluated_constants in*)
+    let constant_tuples = evaluated_constants in
 
 	(**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*)
 	(* Make the array of constants *)

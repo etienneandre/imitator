@@ -4,6 +4,7 @@
 ### Syntax improvement
 * New types for discrete global variables: Boolean variables (`bool`), integer (`int`, over 32 bits) variables
 * `discrete` become `rational` (still encoded using exact arithmetics, as opposed to the new `int` type)
+* New power operator `pow(v, i)` over discrete variables, with `v` an integer or rational expression, and `i` an integer expression (possibly involving integer variables)
 
 ### Syntax changes in the model
 * New syntax for the initial state definition, with a separation between the discrete and the continuous parts (the former syntax remains accepted for backward-compatibility, but a warning is triggered).

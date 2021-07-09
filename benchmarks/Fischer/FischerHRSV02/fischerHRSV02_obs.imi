@@ -13,9 +13,9 @@
  *
  * Created         : 2013/12/10
  * Fork from fischerHRSV02.imi : 2014/04/08
- * Last modified   : 2020/08/14
+ * Last modified    : 2021/07/09
  *
- * IMITATOR version: 3
+ * IMITATOR version: 3.1
  ************************************************************)
 
 
@@ -27,7 +27,7 @@ var
 	
 
 	lock
-		: discrete;
+		: int;
 
 	min_rw = 1, max_rw,
 	min_delay = 3, max_delay,
@@ -41,21 +41,19 @@ automaton pta_1
 synclabs: enter_1, leave_1;
 
 loc start_1: invariant x_1 <= max_rw
-	(* Actually lock != 0 *)
-	when lock > 0 & x_1 > min_rw do {x_1 := 0} goto start_1;
+	when lock <> 0 & x_1 > min_rw do {x_1 := 0} goto start_1;
 
 	when lock = 0 & x_1 > min_rw do {x_1 := 0} goto set_1;
 
 loc set_1: invariant x_1 <= max_rw
-	(* Actually lock = i *)
+	(* Actually lock := i *)
 	when x_1 > min_rw do {lock := 1, x_1 := 0} goto tryenter_1;
 
 loc tryenter_1: invariant x_1 <= max_delay
 	(* Actually lock = i *)
 	when x_1 > min_delay & lock = 1 sync enter_1 goto cs_1;
-	(* Actually lock != i *)
-	when x_1 > min_delay & lock = 0 do {x_1 := 0} goto start_1;
-	when x_1 > min_delay & lock = 2 do {x_1 := 0} goto start_1;
+	(* Actually lock <> i *)
+	when x_1 > min_delay & lock <> 1 do {x_1 := 0} goto start_1;
 
 loc cs_1: invariant True
 	when True do {x_1 := 0, lock := 0} sync leave_1 goto start_1;
@@ -70,21 +68,19 @@ automaton pta_2
 synclabs: enter_2, leave_2;
 
 loc start_2: invariant x_2 <= max_rw
-	(* Actually lock != 0 *)
-	when lock > 0 & x_2 > min_rw do {x_2 := 0} goto start_2;
+	when lock <> 0 & x_2 > min_rw do {x_2 := 0} goto start_2;
 
 	when lock = 0 & x_2 > min_rw do {x_2 := 0} goto set_2;
 
 loc set_2: invariant x_2 <= max_rw
-	(* Actually lock = i *)
+	(* Actually lock := i *)
 	when x_2 > min_rw do {lock := 2, x_2 := 0} goto tryenter_2;
 
 loc tryenter_2: invariant x_2 <= max_delay
 	(* Actually lock = i *)
 	when x_2 > min_delay & lock = 2 sync enter_2 goto cs_2;
-	(* Actually lock != i *)
-	when x_2 > min_delay & lock = 0 do {x_2 := 0} goto start_2;
-	when x_2 > min_delay & lock = 1 do {x_2 := 0} goto start_2;
+	(* Actually lock <> i *)
+	when x_2 > min_delay & lock <> 2 do {x_2 := 0} goto start_2;
 
 loc cs_2: invariant True
 	when True do {x_2 := 0, lock := 0} sync leave_2 goto start_2;
@@ -121,38 +117,44 @@ end (* observer *)
 (* Initial state *)
 (************************************************************)
 
-init :=
-	(*------------------------------------------------------------*)
-	(* Initial location *)
-	(*------------------------------------------------------------*)
-	& loc[pta_1] = start_1
-	& loc[pta_2] = start_2	
-	& loc[observer] = obs_waiting
+
+init := {
 	
-	(*------------------------------------------------------------*)
-	(* Initial discrete assignments *)
-	(*------------------------------------------------------------*)
-	& lock = 0
+    discrete =
+		(*------------------------------------------------------------*)
+		(* Initial location *)
+		(*------------------------------------------------------------*)
+		loc[pta_1]		:= start_1,
+		loc[pta_2]		:= start_2,
+		loc[observer]	:= obs_waiting,
 
-	(*------------------------------------------------------------*)
-	(* Initial clock constraints *)
-	(*------------------------------------------------------------*)
-	& x_1 = 0
-	& x_2 = 0
+		(*------------------------------------------------------------*)
+		(* Initial discrete variables assignments *)
+		(*------------------------------------------------------------*)
+		lock := 0,
 
-	(*------------------------------------------------------------*)
-	(* Parameter constraints *)
-	(*------------------------------------------------------------*)
-	& 0 <= min_rw
-	& min_rw <= max_rw
-	& 0 <= min_delay
-	& min_delay <= max_delay
-	
-	(* For EF to be fair with EFIM *)
-	& max_rw <= 10
-	& max_delay <= 10
-;
+    ;
 
+    continuous =        
+		(*------------------------------------------------------------*)
+		(* Initial clock constraints *)
+		(*------------------------------------------------------------*)
+		& x_1 = 0
+		& x_2 = 0
+
+		(*------------------------------------------------------------*)
+		(* Parameter constraints *)
+		(*------------------------------------------------------------*)
+		& 0 <= min_rw
+		& min_rw <= max_rw
+		& 0 <= min_delay
+		& min_delay <= max_delay
+		
+		(* For EF to be fair with EFIM *)
+		& max_rw <= 10
+		& max_delay <= 10
+	;
+}
 
 (************************************************************)
 (* The end *)

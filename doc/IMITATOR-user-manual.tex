@@ -1907,10 +1907,13 @@ However, \imitator{} does not perform what is referred to as \emph{symbolic mode
 In short, a symbolic state in \imitator{} is made of the following elements:
 \begin{itemize}
 	\item the current location (index) of each \IPTA{};
-	\item the current value of the (rational-valued) discrete variables;
-	\item a constraint on $\Clock \cup \Param \cup \DVar$ representing the continuous information.
+	\item the current value of the discrete variables;
+	\item a constraint on $\Clock \cup \Param$ representing the continuous information.
 \end{itemize}
-In \imitator{}, all rationals (\ie{} the value of the discrete variables and the coefficients used in the constraints) are unbounded rationals (implemented using GMP).
+In \imitator{}, all rationals (\ie{} the value of the rational-valued discrete variables and the coefficients used in the constraints) are unbounded rationals (implemented using GMP).
+Integers over 32 bits are used to encode \styleIMI{int} variables.
+No floating-point approximations (\styleIMI{float}) are used, except for the generation of graphics.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Built-in functions}\label{section:builtin-functions}
@@ -1921,7 +1924,7 @@ In \imitator{}, all rationals (\ie{} the value of the discrete variables and the
 \subsection{Arithmetic functions}
 
 \begin{itemize}
-    \item \styleIMI{pow(x : 'a, e : int) : 'a with 'a : [rational | int]}
+    \item \styleIMI{pow(x : 'a, e : int) : 'a} with \styleIMI{'a : [rational | int]}
 \end{itemize}
 
 \subsection{Conversion functions}
@@ -1960,7 +1963,7 @@ Type checking does the following :
 \begin{itemize}
 	\item It checks type consistency within the expressions;
 	\item It resolves the types of the expressions;
-	\item It applies a numerical type to literal numbers according to the numerical type holding by their outer expression;
+	\item It applies a numerical type to literal numbers according to the numerical type held by their outer expression;
 	\item It checks consistency between an expression type and variable type, in case of assignment;
 	\item It checks consistency between an expression type and its grammar rule.
 \end{itemize}
@@ -2564,7 +2567,7 @@ For the cycle detection using NDFS (\cref{sss:accepting-loop-NDFS}), do not use 
 %------------------------------------------------------------
 \imitator{} considers that all the \IPTA{} declaring a given action must be able to synchronize all together, so that the synchronization can happen.
 By default, \imitator{} considers that the actions declared in an \IPTA{} are those declared in the \styleIMI{synclabs} section.
-Therefore, if an action is declared but never used in (at least) one \IPTA{}, this label will never be synchronized in the execution\footnote{In such a case, action label is actually completely removed before the execution, in order to optimize the execution, and the user is warned of this removal.}.
+Therefore, if an action is declared but never used in (at least) one \IPTA{}, this label will never be synchronized in the execution.\footnote{In such a case, action label is actually completely removed before the execution, in order to optimize the execution, and the user is warned of this removal.}
 
 The option \styleOption{-sync-auto-detect} allows to detect automatically the actions in each \IPTA{}: the actions declared in the \styleIMI{synclabs} section are ignored, and \imitator{} considers as declared actions only the actions really used in this \IPTA{}.
 
@@ -2726,22 +2729,22 @@ We define each of those two components below.
 %------------------------------------------------------------
 \begin{tabular}{l l}
 	\   & \styleIMI{<name>}                                             \\
-	$|$ & \styleIMI{<name> =} \nt{rational}                             \\
+	$|$ & \styleIMI{<name> =} \nt{global\_expression}                             \\
 	$|$ & \styleIMI{<name>} \styleIMI{,} \nt{var\_list}                 \\
-	$|$ & \styleIMI{<name> =} \nt{rational} \styleIMI{,} \nt{var\_list} \\
+	$|$ & \styleIMI{<name> =} \nt{global\_expression} \styleIMI{,} \nt{var\_list} \\
 \end{tabular}
 
 %------------------------------------------------------------
 \regleGrammaire{var\_type}
 %------------------------------------------------------------
 \begin{tabular}{l l}
+	$|$ & \styleIMI{bool}  \\
 	$|$ & \styleIMI{clock}     \\
 	$|$ & \styleIMI{constant}  \\
 	$|$ & \styleIMI{discrete}  \\
-	$|$ & \styleIMI{rational}  \\
 	$|$ & \styleIMI{int}  \\
-	$|$ & \styleIMI{bool}  \\
 	$|$ & \styleIMI{parameter} \\
+	$|$ & \styleIMI{rational}  \\
 \end{tabular}
 
 %------------------------------------------------------------
@@ -3030,8 +3033,8 @@ We define each of those two components below.
 	\   & \nt{rational}                                         \\
 	$|$ & \styleIMI{<name>}                                     \\
 	$|$ & \styleIMI{(} \nt{arithmetic\_expression} \styleIMI{)} \\
-	$|$ & \styleIMI{rational\_of\_int(} \nt{arithmetic\_expression} \styleIMI{)} \\
 	$|$ & \styleIMI{pow(} \nt{arithmetic\_expression}, \nt{arithmetic\_expression} \styleIMI{)} \\
+	$|$ & \styleIMI{rational\_of\_int(} \nt{arithmetic\_expression} \styleIMI{)} \\
 \end{tabular}
 
 
@@ -3171,17 +3174,17 @@ We define each of those two components below.
 %------------------------------------------------------------
 \regleGrammaire{init}
 %------------------------------------------------------------
-\begin{tabular}{l l}
-	 & \nt{init\_definition} \styleIMI{end} \\
-	 $|$ & \nt{old\_init\_definition} \styleIMI{end} \\
-\end{tabular}
-
-%------------------------------------------------------------
-\regleGrammaire{init\_definition}
-%------------------------------------------------------------
+% \begin{tabular}{l l}
+% 	 & \nt{init\_definition} \styleIMI{end} \\
+% 	 $|$ & \nt{old\_init\_definition} \styleIMI{end} \\
+% \end{tabular}
+% 
+% %------------------------------------------------------------
+% \regleGrammaire{init\_definition}
+% %------------------------------------------------------------
 \begin{tabular}{l l}
 	\   & \styleIMI{init} \styleIMI{:= \{} \nt{init\_discrete\_continuous\_definition} \styleIMI{\}} \\
-	$|$ & \emptystring                                                       \\
+% 	$|$ & \emptystring                                                       \\
 \end{tabular}
 
 %------------------------------------------------------------
@@ -3244,13 +3247,13 @@ We define each of those two components below.
 \end{tabular}
 
 
-%------------------------------------------------------------
-\regleGrammaire{old\_init\_definition}
-%------------------------------------------------------------
-\begin{tabular}{l l}
-	\   & \styleIMI{init} \styleIMI{:=} \nt{region\_expression} \styleIMI{;} \\
-	$|$ & \emptystring                                                       \\
-\end{tabular}
+% %------------------------------------------------------------
+% \regleGrammaire{old\_init\_definition}
+% %------------------------------------------------------------
+% \begin{tabular}{l l}
+% 	\   & \styleIMI{init} \styleIMI{:=} \nt{region\_expression} \styleIMI{;} \\
+% 	$|$ & \emptystring                                                       \\
+% \end{tabular}
 
 %------------------------------------------------------------
 \regleGrammaire{region\_expression}
@@ -3264,37 +3267,37 @@ We define each of those two components below.
 \regleGrammaire{region\_expression\_fol}
 %------------------------------------------------------------
 \begin{tabular}{l l}
-	\   & \nt{init\_state\_predicate}                                             \\
+	\   & \nt{linear\_constraint}                                             \\
 	$|$ & \styleIMI{(} \nt{region\_expression\_fol} \styleIMI{)}                  \\
 	$|$ & \nt{region\_expression\_fol} \styleIMI{\&} \nt{region\_expression\_fol} \\
 \end{tabular}
 
 
-%------------------------------------------------------------
-\regleGrammaire{init\_state\_predicate}
-%------------------------------------------------------------
-\begin{tabular}{l l}
-	\   & \nt{init\_loc\_predicate} \\
-	$|$ & \nt{linear\_constraint}   \\
-\end{tabular}
-
-%------------------------------------------------------------
-\regleGrammaire{init\_loc\_predicate}
-%------------------------------------------------------------
-\begin{tabular}{l l}
-	\   & \styleIMI{loc[ <name> ] = <name>} \\
-	$|$ & \styleIMI{<name> is in <name>}    \\
-\end{tabular}
-
-
-%------------------------------------------------------------
-\regleGrammaire{discrete\_predicate}
-%------------------------------------------------------------
-\begin{tabular}{l l}
-	\   & \styleIMI{<name>} \nt{relop} \nt{rational}                                                         \\
-	$|$ & \styleIMI{<name>} \styleIMI{in} \styleIMI{[}\nt{rational} \styleIMI{,} \nt{rational} \styleIMI{]}  \\
-	$|$ & \styleIMI{<name>} \styleIMI{in} \styleIMI{[}\nt{rational} \styleIMI{..} \nt{rational} \styleIMI{]} \\
-\end{tabular}
+% %------------------------------------------------------------
+% \regleGrammaire{init\_state\_predicate}
+% %------------------------------------------------------------
+% \begin{tabular}{l l}
+% 	\   & \nt{init\_loc\_predicate} \\
+% 	$|$ & \nt{linear\_constraint}   \\
+% \end{tabular}
+% 
+% %------------------------------------------------------------
+% \regleGrammaire{init\_loc\_predicate}
+% %------------------------------------------------------------
+% \begin{tabular}{l l}
+% 	\   & \styleIMI{loc[ <name> ] = <name>} \\
+% 	$|$ & \styleIMI{<name> is in <name>}    \\
+% \end{tabular}
+% 
+% 
+% %------------------------------------------------------------
+% \regleGrammaire{discrete\_predicate}
+% %------------------------------------------------------------
+% \begin{tabular}{l l}
+% 	\   & \styleIMI{<name>} \nt{relop} \nt{rational}                                                         \\
+% 	$|$ & \styleIMI{<name>} \styleIMI{in} \styleIMI{[}\nt{rational} \styleIMI{,} \nt{rational} \styleIMI{]}  \\
+% 	$|$ & \styleIMI{<name>} \styleIMI{in} \styleIMI{[}\nt{rational} \styleIMI{..} \nt{rational} \styleIMI{]} \\
+% \end{tabular}
 
 
 

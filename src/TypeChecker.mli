@@ -68,6 +68,7 @@ val check_type_assignment : variable_infos -> variable_name -> ParsingStructure.
 
 (* Check that constant declarations are well typed *)
 val check_constant_declarations : (variable_name * ParsingStructure.global_expression * DiscreteValue.discrete_value * DiscreteValue.var_type) list -> (variable_name * DiscreteValue.discrete_value) list
+val check_constant_declaration : (variable_name * ParsingStructure.global_expression * DiscreteValue.discrete_value * DiscreteValue.var_type) -> (variable_name * DiscreteValue.discrete_value)
 val check_constant_expression : (Automaton.variable_name , DiscreteValue.discrete_value) Hashtbl.t -> global_expression -> global_expression * DiscreteValue.var_type_discrete
 
 (* Check that a discrete variable initialization is well typed *)

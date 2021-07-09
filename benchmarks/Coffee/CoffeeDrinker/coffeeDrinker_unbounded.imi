@@ -4,21 +4,21 @@
  * Title            : coffeeDrinker_unbounded
  * Description      : Coffee vending machine; a single button is used to wake the machine up, and to add sugar. Then a cup, and coffee are delivered after a (parametric) time.
  * Correctness      : The scientist never gets mad
- * Scalable         : 
- * Generated        : 
+ * Scalable         : no
+ * Generated        : no
  * Categories       : Education ; Toy
  * Source           : Own work
  * bibkey           : 
  * Author           : Étienne André
- * Modeling         : 
+ * Modeling         : Étienne André
  * Input by         : Étienne André
- * License          : 
+ * License          : Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
  * 
  * Created          : 2011/01/21
- * Last modified    : 2020/12/18
+ * Last modified    : 2021/07/09
  * Model version    : 
  * 
- * IMITATOR version : 3
+ * IMITATOR version : 3.1
  ******************************************************************************)
 
 var
@@ -46,11 +46,11 @@ var
 
 (* Discrete variables *)
 	nb_sugar
-		: discrete;
+		: int;
 
 (* Constants *)
 (*	MAX_SUGAR = 2
-		: parameter;
+		: int;
 *)
 
 (************************************************************)
@@ -106,35 +106,42 @@ end (* researcher *)
 (* Initial state *)
 (************************************************************)
 
-init :=
-	(*------------------------------------------------------------
-	   INITIAL LOCATION
-	  ------------------------------------------------------------*)
-	& loc[machine]		= idle
-	& loc[researcher]	= researching
 
-	(*------------------------------------------------------------
-	   INITIAL CLOCKS
-	  ------------------------------------------------------------*)
-	& x1 = 0
-	& x2 = 0
-	& y1 >= 0 & y1 <= p_work_max
-
-	(*------------------------------------------------------------
-	   INITIAL DISCRETE
-	  ------------------------------------------------------------*)
-	& nb_sugar = 0
+init := {
 	
-	(*------------------------------------------------------------
-	   PARAMETER CONSTRAINTS
-	  ------------------------------------------------------------*)
-(* 	& p_block_button >= 0 *)
-	& p_add_sugar >= 0
-	& p_coffee >= 0
-	& p_press_min >= 0
-	& p_work_min >= 0
-	& p_work_min <= p_work_max
-	& p_patience_max >= 0
+    discrete =
+		(*------------------------------------------------------------*)
+		(* Initial location *)
+		(*------------------------------------------------------------*)
+		loc[machine]		:= idle,
+		loc[researcher]		:= researching,
+
+		(*------------------------------------------------------------*)
+		(* Initial discrete variables assignments *)
+		(*------------------------------------------------------------*)
+		nb_sugar := 0,
+
+    ;
+
+    continuous =        
+		(*------------------------------------------------------------*)
+		(* Initial clock constraints *)
+		(*------------------------------------------------------------*)
+		& x1 = 0
+		& x2 = 0
+
+		(*------------------------------------------------------------*)
+		(* Parameter constraints *)
+		(*------------------------------------------------------------*)
+		& y1 >= 0 & y1 <= p_work_max
+	(* 	& p_block_button >= 0 *)
+		& p_add_sugar >= 0
+		& p_coffee >= 0
+		& p_press_min >= 0
+		& p_work_min >= 0
+		& p_work_min <= p_work_max
+		& p_patience_max >= 0	;
+}
 ;
 
 

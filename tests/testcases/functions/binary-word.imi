@@ -1,0 +1,95 @@
+(************************************************************
+ *                                IMITATOR MODEL
+ *
+ * Title            : Test that behaviors of all possible functions on binary word are correct 
+ * Description      : Test use of different functions on binary words and check that their behaviors are correct
+ * Correctness      : True
+ * Scalable         : No
+ * Generated        : No
+ * Categories       : Semantic, Behavior
+ * Source           : 
+ * bibkey           : 
+ * Author           : Benjamin L.
+ * Modeling         : Benjamin L.
+ * Input by         : Benjamin L.
+ * License          : Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+ *
+ * Created          : 2021/06/30
+ * Last modified    : 2021/06/30
+ * Model version    : 1.0
+ *
+ * IMITATOR version : 3.1.0
+ ************************************************************)
+ 
+var         
+    bin1,
+    bin2,
+    bin_result
+        : binary(5);
+    bin_result2
+        : binary(8);
+    x
+        : clock;
+    i, j 
+    	: int;
+    k = 2
+        : int;
+    r
+        : rational;
+
+
+(************************************************************)
+ automaton pta
+(************************************************************)
+ 
+loc loc_init: invariant True 
+	when True do { bin_result := logand(bin1, bin2) } goto loc_land;
+	
+loc loc_land: invariant True 
+    when True do { bin_result := logor(bin1, bin2) } goto loc_lor;
+    
+loc loc_lor: invariant True 
+    when True do { bin_result := logxor(bin1, bin2) } goto loc_lxor;
+    
+loc loc_lxor: invariant True 
+    when True do { bin_result := lognot(bin1) } goto loc_lnot;
+    
+loc loc_lnot: invariant True 
+    when True do { bin_result := shift_left(bin1, 2) } goto loc_shift_left;
+    
+loc loc_shift_left: invariant True 
+    when True do { bin_result := shift_right(bin1, 2) } goto loc_shift_right;
+    
+loc loc_shift_right: invariant True 
+    when True do { bin_result2 := fill_left(bin1, 1 + k ) } goto loc_fill_left;
+    
+loc loc_fill_left: invariant True 
+    when True do { bin_result2 := fill_right(bin1, 1 + k ) } goto loc_fill_right;
+
+accepting loc loc_fill_right: invariant True
+ end (* pta *)
+(************************************************************)
+
+
+(************************************************************)
+(* Initial state *)
+(************************************************************)
+
+
+init := {
+
+    discrete = 
+        loc[pta] := loc_init,
+        i := 0,
+        bin1 := 0b10101,
+        bin2 := 0b10110
+    ;
+    
+}
+
+
+
+(************************************************************)
+(* The end *)
+(************************************************************)
+end

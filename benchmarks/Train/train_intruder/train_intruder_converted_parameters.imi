@@ -12,9 +12,9 @@
  *
  * Created         : 2015/09/24
  * Fork            : 2017/06/28
- * Last modified   : 2020/08/19
+ * Last modified   : 2021/07/09
  *
- * IMITATOR version: 3
+ * IMITATOR version: 3.1
  ************************************************************)
 
 var
@@ -25,10 +25,10 @@ var
  	x_intruder,
 		: clock;
 
-(* Discrete *)
+(* Boolean discrete variables *)
 	gate_down,     (* (Boolean) encoding whether the gate is down *)
 	sensors_active,(* (Boolean) encoding whether the sensor is active *)
-		: discrete;
+		: bool;
 
 (* Train parameters *)
 	p_far,         (* time between being far and approaching *)
@@ -46,10 +46,8 @@ p_sensor_far, p_pass, p_start_lowering, p_end_lowering, p_break_sensor
 		: parameter;
 
 (* Constants *)
-	FALSE = 0,
-	TRUE = 1,
 	ACTIVE = 0,
-		: constant;
+		: rational;
 
 
 (************************************************************)
@@ -59,15 +57,15 @@ synclabs: sensor_far, pass;
 
 loc far: invariant x_train <= p_far
 	(* Normal mode: sensors are on *)
-	when x_train = p_far & sensors_active = TRUE & p_sensor_far = ACTIVE sync sensor_far do {x_train := 0} goto approaching;
+	when x_train = p_far & sensors_active & p_sensor_far = ACTIVE sync sensor_far do {x_train := 0} goto approaching;
 	(* Failure: sensors are off *)
-	when x_train = p_far & sensors_active = FALSE do {x_train := 0} goto approaching;
+	when x_train = p_far & not(sensors_active) do {x_train := 0} goto approaching;
 
 loc approaching: invariant x_train <= p_approaching
 	(* Normal situation *)
-	when x_train = p_approaching & gate_down = TRUE & p_pass = ACTIVE  do {x_train := 0} sync pass goto gone;
+	when x_train = p_approaching & gate_down & p_pass = ACTIVE  do {x_train := 0} sync pass goto gone;
 	(* Gate not closed! *)
-	when x_train = p_approaching & gate_down = FALSE & p_pass = ACTIVE do {x_train := 0} sync pass goto crash;
+	when x_train = p_approaching & not(gate_down) & p_pass = ACTIVE do {x_train := 0} sync pass goto crash;
 	
 (** HACK: stop time to reduce state space *)
 loc gone: invariant x_train <= 0
@@ -95,7 +93,7 @@ loc waiting: invariant x_gate <= p_waiting
 	when p_pass = ACTIVE sync pass do {x_gate := 0} goto up;
 
 loc lowering: invariant x_gate <= p_lowering
-	when x_gate = p_lowering & p_end_lowering = ACTIVE sync end_lowering do {x_gate := 0, gate_down := TRUE} goto down;
+	when x_gate = p_lowering & p_end_lowering = ACTIVE sync end_lowering do {x_gate := 0, gate_down := True} goto down;
 	(* Gate is reinitialized whenever the train passes *)
 	when p_pass = ACTIVE sync pass do {x_gate := 0} goto up;
 
@@ -112,7 +110,7 @@ end (* gate *)
 synclabs: break_sensor;
 
 loc walking_sensor: invariant x_intruder <= p_walking_sensor
-	when x_intruder = p_walking_sensor & p_break_sensor = ACTIVE sync break_sensor do {sensors_active := FALSE, x_intruder := 0} goto intruder_done;
+	when x_intruder = p_walking_sensor & p_break_sensor = ACTIVE sync break_sensor do {sensors_active := False, x_intruder := 0} goto intruder_done;
 
 loc intruder_done: invariant True
 
@@ -123,43 +121,47 @@ end (* intruder *)
 (************************************************************)
 (* Initial state *)
 (************************************************************)
-
-init :=
-	(*------------------------------------------------------------*)
-	(* Initial location *)
-	(*------------------------------------------------------------*)
-	& loc[train]     = far
-	& loc[gate]      = up
-	& loc[intruder]  = walking_sensor
-
-	(*------------------------------------------------------------*)
-	(* Initial discrete *)
-	(*------------------------------------------------------------*)
-	& gate_down      = FALSE
-	& sensors_active = TRUE
-
-	(*------------------------------------------------------------*)
-	(* Initial clock constraints *)
-	(*------------------------------------------------------------*)
-	& x_train    = 0
-	& x_gate     >= 0
-	& x_intruder = 0
-
-	(*------------------------------------------------------------*)
-	(* Parameter constraints *)
-	(*------------------------------------------------------------*)
-	& p_far            >= 0
-	& p_approaching    >= 0
-	& p_waiting        >= 0
-	& p_lowering       >= 0
-	& p_walking_sensor >= 0
+init := {
 	
-	& p_sensor_far >= 0
-	& p_pass >= 0
-	& p_start_lowering >= 0
-	& p_end_lowering >= 0
-	& p_break_sensor >= 0
-;
+    discrete =
+		(*------------------------------------------------------------*)
+		(* Initial location *)
+		(*------------------------------------------------------------*)
+		loc[train]     := far,
+		loc[gate]      := up,
+		loc[intruder]  := walking_sensor,
+
+		(*------------------------------------------------------------*)
+		(* Initial discrete variables assignments *)
+		(*------------------------------------------------------------*)
+		gate_down      := False,
+		sensors_active := True,
+    ;
+
+    continuous =        
+		(*------------------------------------------------------------*)
+		(* Initial clock constraints *)
+		(*------------------------------------------------------------*)
+		& x_train    = 0
+		& x_gate     >= 0
+		& x_intruder = 0
+
+		(*------------------------------------------------------------*)
+		(* Parameter constraints *)
+		(*------------------------------------------------------------*)
+		& p_far            >= 0
+		& p_approaching    >= 0
+		& p_waiting        >= 0
+		& p_lowering       >= 0
+		& p_walking_sensor >= 0
+		
+		& p_sensor_far >= 0
+		& p_pass >= 0
+		& p_start_lowering >= 0
+		& p_end_lowering >= 0
+		& p_break_sensor >= 0
+	;
+}
 
 
 (************************************************************)

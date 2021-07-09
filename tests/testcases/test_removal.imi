@@ -1,0 +1,93 @@
+(************************************************************
+ *                                IMITATOR MODEL
+ *
+ * Title            : Test variable removal for various types
+ * Description      : Test variable removal for various types
+ * Correctness      : N/A
+ * Scalable         : no
+ * Generated        : no
+ * Categories       : TBD
+ * Source           : Own work
+ * bibkey           : 
+ * Author           : Étienne André
+ * Modeling         : Étienne André
+ * Input by         : Étienne André
+ * License          : Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+ *
+ * Created          : 2021/07/08
+ * Last modified    : 2021/07/08
+ * Model version    : 0.1
+ *
+ * IMITATOR version : 3.1
+ ************************************************************)
+
+var
+
+(* Clocks *)
+ 	x, y, z,
+		: clock;
+
+(* Discrete *)
+	i,
+		: int;
+	r,
+		: rational;
+
+(* Parameters *)
+	p, q,
+		: parameter;
+
+
+
+(************************************************************)
+  automaton pta
+(************************************************************)
+synclabs: a;
+
+loc l1: invariant q >= 0
+	when x = 1 sync a do {x := x + r} goto l1;
+
+end (* pta *)
+
+
+
+(************************************************************)
+(* Initial state *)
+(************************************************************)
+
+init := {
+	
+    discrete =
+		(*------------------------------------------------------------*)
+		(* Initial location *)
+		(*------------------------------------------------------------*)
+		loc[pta] := l1,
+
+		(*------------------------------------------------------------*)
+		(* Initial discrete variables assignments *)
+		(*------------------------------------------------------------*)
+		r := 0,
+		i := 0,
+
+    ;
+
+    continuous =        
+		(*------------------------------------------------------------*)
+		(* Initial clock constraints *)
+		(*------------------------------------------------------------*)
+		& x = 0
+		& y >= 2
+		& z <= 2+2
+
+		(*------------------------------------------------------------*)
+		(* Parameter constraints *)
+		(*------------------------------------------------------------*)
+		& p >= 0
+	;
+}
+
+
+(************************************************************)
+(* The end *)
+(************************************************************)
+end
