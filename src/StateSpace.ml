@@ -231,6 +231,8 @@ let counter_empty_states_for_comparison = create_hybrid_counter_and_register "St
 
 let data_recorder_merging = create_data_recorder_and_register "StateSpace.merging_sequences" Algorithm_counter Verbose_experiments
 
+(* Counters for experiments of merging-in-pta *)
+let tcounter_skip_test = create_discrete_counter_and_register "StateSpace.Skip tests" Algorithm_counter Verbose_experiments
 
 (************************************************************)
 (** Local exception *)
@@ -1484,26 +1486,72 @@ let add_p_constraint_to_states state_space p_constraint =
 (* ---------------------------- *)
 (* Code for Merging starts here *)
 (* ---------------------------- *)
+let lenght_fail_sequence = ref 0
+let lenght_skip_sequence = ref 0
+let step = ref "fail"
 
 (* Merges states in queue with states in state space. Removes unreachable states. Returns unmerged part of queue *)
 let merge state_space queue =
+	let options = Input.get_options () in
 	(* Statistics *)
 	tcounter_merge#start;
+
+    (* Check if the are_mergeable test needs to be perform according to the merge options *)
+    let perform_test fails skips =
+        match options#merge_algorithm with
+        | Merge_none -> true
+        | Merge_static -> (* n1 and n2 don't change *)
+              (* While looking for the number of fails *)
+              (* If it found n1 fails, go to the skip step *)
+              if fails = options#merge_n1 then
+                  begin
+                  lenght_fail_sequence := 0;
+                  step := "skip";
+                  false
+                  end
+              (* If it found n2 skip, go to the fail step *)
+              else if skips = options#merge_n2 then
+                  begin
+                  lenght_skip_sequence := 0;
+                  step := "fail";
+                  true
+                  end
+              else if !step = "fail" then (* ie. fail sequence is performing *)
+                   true
+              else if !step = "skip"  then (* ie. skip sequence is performing *)
+                   false
+              else raise (InternalError "perform_test for Merge_static");
+
+        | _ -> true
+    in
 
     (* Check if two states can be merged *)
     (*** NOTE: with side-effects! ***)
     let are_mergeable s s' : bool =
-        (* Statistics *)
-        nb_merging_attempts#increment;
+        if perform_test !lenght_fail_sequence !lenght_skip_sequence then
+            begin
+            (* Statistics *)
+            nb_merging_attempts#increment;
 
-        (* Call dedicated function *)
-        let merged = LinearConstraint.px_hull_assign_if_exact s s' in
+            (* Call dedicated function *)
+            let merged = LinearConstraint.px_hull_assign_if_exact s s' in
 
-        (* Statistics *)
-        data_recorder_merging#add_data (if merged then "Y" else "N");
+            (* Statistics *)
+            data_recorder_merging#add_data (if merged then "Y" else "N");
 
-        (* Return result *)
-        merged
+            (* Merge algorithm *)
+            if merged then lenght_fail_sequence:=0 else lenght_fail_sequence := !lenght_fail_sequence + 1;
+
+            (* Return result *)
+            merged
+            end
+        else
+            begin
+            data_recorder_merging#add_data ".";
+            lenght_skip_sequence := !lenght_skip_sequence + 1;
+            tcounter_skip_test#increment;
+            false
+            end
     in
 
     (* Get states sharing the same location and discrete values from hash_table, excluding s *)
