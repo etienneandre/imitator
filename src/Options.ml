@@ -1252,15 +1252,7 @@ class imitator_options =
 			end;
 
             (* Merge heuristic for EFsynthminpq *)
-            begin
-			match merge_heuristic with
-				| Merge_always -> print_message Verbose_experiments ("Merge heuristic: always.")
-				| Merge_targetseen -> print_message Verbose_experiments ("Merge heuristic: targetseen.")
-				| Merge_pq10 -> print_message Verbose_experiments ("Merge heuristic: pq10.")
-				| Merge_pq100 -> print_message Verbose_experiments ("Merge heuristic: pq100.")
-				| Merge_iter10 -> print_message Verbose_experiments ("Merge heuristic: iter10.")
-				| Merge_iter100 -> print_message Verbose_experiments ("Merge heuristic: iter100.")
-			end;
+            print_message Verbose_experiments ("Merge heuristic: " ^ (AbstractAlgorithm.string_of_merge_heuristic merge_heuristic) ^ ".");
 
             (* Merge algorithm *)
             if merge_algorithm = Merge_none then(

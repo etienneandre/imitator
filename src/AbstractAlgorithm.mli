@@ -206,4 +206,5 @@ val string_of_translation				: translation				-> string
 val string_of_exploration_order			: exploration_order			-> string
 val string_of_cycle_algorithm			: cycle_algorithm			-> string
 val string_of_state_comparison_operator	: state_comparison_operator	-> string
+val string_of_merge_heuristic			: merge_heuristic			-> string
 val string_of_merge_algorithm			: merge_algorithm			-> string

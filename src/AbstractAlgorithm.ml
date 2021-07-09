@@ -287,6 +287,15 @@ let string_of_state_comparison_operator (state_comparison_operator : state_compa
 	| Double_inclusion_check -> "double inclusion check"
 
 
+let string_of_merge_heuristic (merge_heuristic : merge_heuristic) : string = match merge_heuristic with
+	| Merge_always		-> "always"
+	| Merge_targetseen	-> "targetseen"
+	| Merge_pq10		-> "pq10"
+	| Merge_pq100		-> "pq100"
+	| Merge_iter10		-> "iter10"
+	| Merge_iter100		-> "iter100"
+
+
 let string_of_merge_algorithm (merge_algorithm : merge_algorithm) : string = match merge_algorithm with
 	| Merge_none				-> "no merge"
 	| Merge_static				-> "static"
