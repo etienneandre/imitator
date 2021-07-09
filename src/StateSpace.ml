@@ -1490,157 +1490,157 @@ let merge state_space queue =
 	(* Statistics *)
 	tcounter_merge#start;
 
-(* Check if two states can be merged *)
-(*** NOTE: with side-effects! ***)
-let are_mergeable s s' : bool =
-	(* Statistics *)
-	nb_merging_attempts#increment;
+    (* Check if two states can be merged *)
+    (*** NOTE: with side-effects! ***)
+    let are_mergeable s s' : bool =
+        (* Statistics *)
+        nb_merging_attempts#increment;
 
-	(* Call dedicated function *)
-	let merged = LinearConstraint.px_hull_assign_if_exact s s' in
-	
-	(* Statistics *)
-	data_recorder_merging#add_data (if merged then "Y" else "N");
-	
-	(* Return result *)
-	merged
-in
+        (* Call dedicated function *)
+        let merged = LinearConstraint.px_hull_assign_if_exact s s' in
 
-(* Get states sharing the same location and discrete values from hash_table, excluding s *)
-let get_siblings state_space si new_states =
-	let options = Input.get_options () in
-	let s = get_state state_space si in
-	let l = s.global_location in
-        let li = new_location_index state_space l in
-	let sibs = Hashtbl.find_all state_space.states_for_comparison li in
-	(* lookup px_constraints and exclude si itself *)
-        let result = List.fold_left (fun siblings sj ->
-		if sj = si || (options#mergeq && not(List.mem sj new_states)) then siblings else begin
-			let state = get_state state_space sj in
-			let c' = state.px_constraint in
-			(sj,c') :: siblings
-		end
-	) [] sibs in
-        print_message Verbose_high ("Siblings (" ^ string_of_int si ^ ") : " ^ string_of_list_of_int (List.map fst result));
-        result
-in
+        (* Statistics *)
+        data_recorder_merging#add_data (if merged then "Y" else "N");
 
-(* function for merging one state with its siblings *)
-let merge_state si =
-	print_message Verbose_total ("[Merge] Try to merge state " ^ (string_of_int si));
-	let state = get_state state_space si in
-	let c = state.px_constraint in
-	(* get merge candidates as pairs (index, state) *)
-	let candidates = get_siblings state_space si queue in
-	(* try to merge with siblings, restart if merge found, return eaten states *)
-	let rec eat all_mc rest_mc = begin
-		match rest_mc with
-			| [] -> [] (* here, we are really done *)
-			| m :: tail_mc -> begin
-				let sj,c' = m in
-				if are_mergeable c c' then begin
-					(* Statistics *)
-					nb_merged#increment;
+        (* Return result *)
+        merged
+    in
 
-					(* Print some information *)
-					print_message Verbose_high ("[Merge] State " ^ (string_of_int si) ^ " merged with state " ^ (string_of_int sj));
+    (* Get states sharing the same location and discrete values from hash_table, excluding s *)
+    let get_siblings state_space si new_states =
+        let options = Input.get_options () in
+        let s = get_state state_space si in
+        let l = s.global_location in
+            let li = new_location_index state_space l in
+        let sibs = Hashtbl.find_all state_space.states_for_comparison li in
+        (* lookup px_constraints and exclude si itself *)
+            let result = List.fold_left (fun siblings sj ->
+            if sj = si || (options#mergeq && not(List.mem sj new_states)) then siblings else begin
+                let state = get_state state_space sj in
+                let c' = state.px_constraint in
+                (sj,c') :: siblings
+            end
+        ) [] sibs in
+            print_message Verbose_high ("Siblings (" ^ string_of_int si ^ ") : " ^ string_of_list_of_int (List.map fst result));
+            result
+    in
 
-					(* we ate sj, start over with new bigger state, removing sj *)
-					let all_mc' = List.filter (fun (sk, _) -> sk <> sj) all_mc in
-					sj :: eat all_mc' all_mc'
-				end else begin
-					(* try to eat the rest of them *)
-					eat all_mc tail_mc
-				end
-			end
-	end
-	in
-	eat candidates candidates
-in
+    (* function for merging one state with its siblings *)
+    let merge_state si =
+        print_message Verbose_total ("[Merge] Try to merge state " ^ (string_of_int si));
+        let state = get_state state_space si in
+        let c = state.px_constraint in
+        (* get merge candidates as pairs (index, state) *)
+        let candidates = get_siblings state_space si queue in
+        (* try to merge with siblings, restart if merge found, return eaten states *)
+        let rec eat all_mc rest_mc = begin
+            match rest_mc with
+                | [] -> [] (* here, we are really done *)
+                | m :: tail_mc -> begin
+                    let sj,c' = m in
+                    if are_mergeable c c' then begin
+                        (* Statistics *)
+                        nb_merged#increment;
 
-(* make a copy of the reachable part of the state space with the eaten states replaced by the merger_state *)
-let copy_and_reduce state_space merger_state eaten =
-	let new_states = Hashtbl.create 1024 in
-	let new_trans = Hashtbl.create 1024 in
-	let new_compare = Hashtbl.create 1024 in
-	let add_state s = (* adds s to new_states *)
-		let state = Hashtbl.find state_space.all_states s in
-		let loc = state.global_location_index in
-		Hashtbl.replace new_states s state;
-		Hashtbl.add new_compare loc s in
-	let add_trans s a t = (* adds s --a--> t to new_transitions *)
-		let transitions = hashtbl_get_or_default new_trans s [] in
-		if not (List.mem (a,t) transitions)
-		then Hashtbl.replace new_trans s ((a,t)::transitions) in
-	let rec crs s = (* depth-first copy of reachable part of the state space *)
-		if not (Hashtbl.mem new_states s || List.mem s eaten) then begin
-			(* s has not been visited and is not eaten, so continue with successors *)
-			print_message Verbose_total ("[Merge] Visiting new state " ^ (string_of_int s));
-			add_state s;
-			List.iter (fun (trans,target) ->
-				if (List.mem target eaten)
-				then add_trans s trans merger_state
-				else begin
-					add_trans s trans target;
-					crs target
-				end
-			) (get_successors_with_combined_transitions state_space s)
-		end
-		else if (Hashtbl.mem new_states s) then
-			print_message Verbose_total ("[Merge] State " ^ (string_of_int s) ^ " was already visited")
-		else if (List.mem s eaten) then
-			print_message Verbose_total ("[Merge] State " ^ (string_of_int s) ^ " has been merged")
-		in
-	let init = get_initial_state_index state_space in
-	print_message Verbose_medium ("[Merge] Merging " ^ (string_of_list_of_int eaten) ^ " into state " ^ (string_of_int merger_state));
-	crs init;
-	add_state merger_state;
-	if List.mem init eaten then state_space.initial <- Some merger_state;
-	state_space.all_states <- new_states;
-	state_space.transitions_table <- new_trans;
-	state_space.states_for_comparison <- new_compare
-in
-	(* Iterate list of states and try to merge them in the state space *)
-	let rec main_merger states =
-		match states with
-			| [] -> ()
-			| s :: ss -> begin
-					main_merger ss;
-					if Hashtbl.mem state_space.all_states s then (* treat s only if it is still reachable *)
-					let eaten = merge_state s in
-					if eaten <> [] then(
-						(* Statistics *)
-						tcounter_merge_statespace#start;
+                        (* Print some information *)
+                        print_message Verbose_high ("[Merge] State " ^ (string_of_int si) ^ " merged with state " ^ (string_of_int sj));
 
-						(* Reconstruct state space *)
-						copy_and_reduce state_space s eaten;
+                        (* we ate sj, start over with new bigger state, removing sj *)
+                        let all_mc' = List.filter (fun (sk, _) -> sk <> sj) all_mc in
+                        sj :: eat all_mc' all_mc'
+                    end else begin
+                        (* try to eat the rest of them *)
+                        eat all_mc tail_mc
+                    end
+                end
+        end
+        in
+        eat candidates candidates
+    in
 
-						(* Statistics *)
-						tcounter_merge_statespace#stop;
-					)
-				     end
-in
-	(* Do it! main function of StateSpace.merge *)
-	let orig_nb_states = nb_states state_space in
-	let orig_nb_queue = List.length queue in
-	main_merger queue;
-	let new_queue = List.filter (test_state_index state_space) queue in
-	let new_nb_states = nb_states state_space in
-	let new_nb_queue = List.length new_queue in
-	if (orig_nb_states <> new_nb_states || orig_nb_queue <> new_nb_queue)
-	then print_message Verbose_standard (
-		let diff_queue = (orig_nb_queue-new_nb_queue) in
-		let diff_states = (orig_nb_states-new_nb_states) in
-		let diff_explored =  diff_states - diff_queue in
-		"[Merge] " ^ (string_of_int diff_states) ^ " states merged ("
-		^ (string_of_int diff_explored) ^ " explored, " ^ (string_of_int diff_queue) ^ " queued), out of "
-		^ (string_of_int orig_nb_states) ^ " states (" ^ (string_of_int orig_nb_queue) ^ " in queue)");
+    (* make a copy of the reachable part of the state space with the eaten states replaced by the merger_state *)
+    let copy_and_reduce state_space merger_state eaten =
+        let new_states = Hashtbl.create 1024 in
+        let new_trans = Hashtbl.create 1024 in
+        let new_compare = Hashtbl.create 1024 in
+        let add_state s = (* adds s to new_states *)
+            let state = Hashtbl.find state_space.all_states s in
+            let loc = state.global_location_index in
+            Hashtbl.replace new_states s state;
+            Hashtbl.add new_compare loc s in
+        let add_trans s a t = (* adds s --a--> t to new_transitions *)
+            let transitions = hashtbl_get_or_default new_trans s [] in
+            if not (List.mem (a,t) transitions)
+            then Hashtbl.replace new_trans s ((a,t)::transitions) in
+        let rec crs s = (* depth-first copy of reachable part of the state space *)
+            if not (Hashtbl.mem new_states s || List.mem s eaten) then begin
+                (* s has not been visited and is not eaten, so continue with successors *)
+                print_message Verbose_total ("[Merge] Visiting new state " ^ (string_of_int s));
+                add_state s;
+                List.iter (fun (trans,target) ->
+                    if (List.mem target eaten)
+                    then add_trans s trans merger_state
+                    else begin
+                        add_trans s trans target;
+                        crs target
+                    end
+                ) (get_successors_with_combined_transitions state_space s)
+            end
+            else if (Hashtbl.mem new_states s) then
+                print_message Verbose_total ("[Merge] State " ^ (string_of_int s) ^ " was already visited")
+            else if (List.mem s eaten) then
+                print_message Verbose_total ("[Merge] State " ^ (string_of_int s) ^ " has been merged")
+            in
+        let init = get_initial_state_index state_space in
+        print_message Verbose_medium ("[Merge] Merging " ^ (string_of_list_of_int eaten) ^ " into state " ^ (string_of_int merger_state));
+        crs init;
+        add_state merger_state;
+        if List.mem init eaten then state_space.initial <- Some merger_state;
+        state_space.all_states <- new_states;
+        state_space.transitions_table <- new_trans;
+        state_space.states_for_comparison <- new_compare
+    in
+        (* Iterate list of states and try to merge them in the state space *)
+        let rec main_merger states =
+            match states with
+                | [] -> ()
+                | s :: ss -> begin
+                        main_merger ss;
+                        if Hashtbl.mem state_space.all_states s then (* treat s only if it is still reachable *)
+                        let eaten = merge_state s in
+                        if eaten <> [] then(
+                            (* Statistics *)
+                            tcounter_merge_statespace#start;
 
-	(* Statistics *)
-	tcounter_merge#stop;
+                            (* Reconstruct state space *)
+                            copy_and_reduce state_space s eaten;
 
-	(* return *)
-	new_queue
+                            (* Statistics *)
+                            tcounter_merge_statespace#stop;
+                        )
+                         end
+    in
+        (* Do it! main function of StateSpace.merge *)
+        let orig_nb_states = nb_states state_space in
+        let orig_nb_queue = List.length queue in
+        main_merger queue;
+        let new_queue = List.filter (test_state_index state_space) queue in
+        let new_nb_states = nb_states state_space in
+        let new_nb_queue = List.length new_queue in
+        if (orig_nb_states <> new_nb_states || orig_nb_queue <> new_nb_queue)
+        then print_message Verbose_standard (
+            let diff_queue = (orig_nb_queue-new_nb_queue) in
+            let diff_states = (orig_nb_states-new_nb_states) in
+            let diff_explored =  diff_states - diff_queue in
+            "[Merge] " ^ (string_of_int diff_states) ^ " states merged ("
+            ^ (string_of_int diff_explored) ^ " explored, " ^ (string_of_int diff_queue) ^ " queued), out of "
+            ^ (string_of_int orig_nb_states) ^ " states (" ^ (string_of_int orig_nb_queue) ^ " in queue)");
+
+        (* Statistics *)
+        tcounter_merge#stop;
+
+        (* return *)
+        new_queue
 
 
 (** Empties the hash table giving the set of states for a given location; optimization for the jobshop example, where one is not interested in comparing  a state of iteration n with states of iterations < n *)
