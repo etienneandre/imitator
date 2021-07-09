@@ -285,3 +285,9 @@ let string_of_state_comparison_operator (state_comparison_operator : state_compa
 	| Including_check -> "including check"
 	(* Does not add the new state if it is included in another state, or if another state is included into the current state (in which case the new state replaces the old one in the state space) *)
 	| Double_inclusion_check -> "double inclusion check"
+
+
+let string_of_merge_algorithm (merge_algorithm : merge_algorithm) : string = match merge_algorithm with
+	| Merge_none				-> "no merge"
+	| Merge_static				-> "static"
+	| Merge_exponentialbackoff	-> "exponential backoff"

@@ -8,7 +8,7 @@
  *
  * File contributors : Étienne André, Dylan Marinho
  * Created           : 2019/12/18
- * Last modified     : 2021/07/08
+ * Last modified     : 2021/07/09
  *
  ************************************************************)
 
@@ -206,3 +206,4 @@ val string_of_translation				: translation				-> string
 val string_of_exploration_order			: exploration_order			-> string
 val string_of_cycle_algorithm			: cycle_algorithm			-> string
 val string_of_state_comparison_operator	: state_comparison_operator	-> string
+val string_of_merge_algorithm			: merge_algorithm			-> string
