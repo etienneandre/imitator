@@ -10,7 +10,7 @@
  *
  * File contributors : Ulrich Kühne, Étienne André, Laure Petrucci, Dylan Marinho
  * Created           : 2010
- * Last modified     : 2021/07/08
+ * Last modified     : 2021/07/09
  *
  ************************************************************)
 
@@ -568,6 +568,21 @@ class imitator_options =
 					exit(1);
 				)
 
+			and set_merge_algorithm merge_algorithm_str =
+				(*  *)
+				if merge_algorithm_str = "none" then
+					merge_algorithm <- Merge_none
+				else if merge_algorithm_str = "static" then
+					merge_algorithm <- Merge_static
+				else if merge_algorithm_str = "expback" then
+					merge_algorithm <- Merge_exponentialbackoff
+				else(
+					print_error ("The merge algorithm `" ^ merge_algorithm_str ^ "` is not valid.");
+					Arg.usage speclist usage_msg;
+					abort_program ();
+					exit(1);
+				)
+
 			and set_merge_heuristic heuristic =
 				(*  *)
 				if heuristic = "always" then
@@ -812,6 +827,9 @@ class imitator_options =
 
 				("-merge212", Unit (fun () -> warn_if_set merge212 "merge212"; merge212 <- Some true), "Use the merging technique of [AFS13], version from IMITATOR 2.12. Default: WORK IN PROGRESS");
 				("-no-merge212", Unit (fun () -> warn_if_set merge212 "merge212"; merge212 <- Some false), " Do not use the merging technique of [AFS13], version from IMITATOR 2.12. Default: WORK IN PROGRESS.
+				");
+
+				("-merge-algorithm", String set_merge_algorithm, " Merge algorithm. Possible values are `none`, `static`, `expback`. Default: `none`.
 				");
 
 				("-merge-heuristic", String set_merge_heuristic, " Merge heuristic for EFsynthminpq. Possible values are `always`, `targetseen`, `pq10`, `pq100`, `iter10`, `iter100`. Default: `iter10`.
@@ -1084,6 +1102,24 @@ class imitator_options =
 					);
 			);
 
+			
+			(* Warn if merge heuristics are used without merging *)
+			if merge = Some false then(
+				if merge_n1 <> AbstractAlgorithm.undefined_merge_n then(
+					print_warning "The value of option -merge-n1 is ignored since merging is not used.";
+				);
+				if merge_n2 <> AbstractAlgorithm.undefined_merge_n then(
+					print_warning "The value of option -merge-n2 is ignored since merging is not used.";
+				);
+				if merge_algorithm <> Merge_none then(
+					print_warning "The value of option -merge-algorithm is ignored since merging is not used.";
+				);
+				(*** NOTE: no default value, so no check ***)
+				(*
+				if merge_heuristic <> None then(
+					print_warning "The value of option -merge-algorithm is ignored since merging is not used.";
+				);*)
+			);
 
 
 			(**-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*)
@@ -1215,7 +1251,7 @@ class imitator_options =
 				| None -> print_message Verbose_low ("No exploration order set.")
 			end;
 
-            (* Merge heuristic *)
+            (* Merge heuristic for EFsynthminpq *)
             begin
 			match merge_heuristic with
 				| Merge_always -> print_message Verbose_experiments ("Merge heuristic: always.")
@@ -1226,6 +1262,19 @@ class imitator_options =
 				| Merge_iter100 -> print_message Verbose_experiments ("Merge heuristic: iter100.")
 			end;
 
+            (* Merge algorithm *)
+            if merge_algorithm = Merge_none then(
+				print_message Verbose_low ("No merge algorithm.");
+            )else(
+				print_message Verbose_standard ("Merge algorithm: " ^ (AbstractAlgorithm.string_of_merge_algorithm merge_algorithm));
+				
+				if merge_n1 = AbstractAlgorithm.undefined_merge_n && merge_n2 = AbstractAlgorithm.undefined_merge_n then(
+					print_message Verbose_low ("No n1, n2 for merge.");
+				)else(
+					print_message Verbose_standard ("Merge: n1 = " ^ (string_of_int merge_n1) ^ ", n2 = " ^ (string_of_int merge_n2) ^ ".");
+				);
+            );
+            
 
 			if no_time_elapsing then
 				print_message Verbose_standard ("Time elapsing will be applied at the beginning of the computation of a new state.")
