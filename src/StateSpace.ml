@@ -1488,7 +1488,9 @@ let add_p_constraint_to_states state_space p_constraint =
 (* ---------------------------- *)
 let lenght_fail_sequence = ref 0
 let lenght_skip_sequence = ref 0
+let skip_factor = ref 1
 let step = ref "fail"
+(* TODO DYLAN add options skip_factor: initial value (for now 1) and exp_factor (for now 2) *)
 
 (* Merges states in queue with states in state space. Removes unreachable states. Returns unmerged part of queue *)
 let merge state_space queue =
@@ -1521,8 +1523,28 @@ let merge state_space queue =
               else if !step = "skip"  then (* ie. skip sequence is performing *)
                    false
               else raise (InternalError "perform_test for Merge_static");
-
-        | _ -> true
+        | Merge_exponentialbackoff -> (* n1 don't change, n2 exp. *)
+                      (* While looking for the number of fails *)
+                      (* If it found n1 fails, go to the skip step *)
+                      if fails = options#merge_n1 then
+                          begin
+                          lenght_fail_sequence := 0;
+                          step := "skip";
+                          false
+                          end
+                      (* If it found n2 skip, go to the fail step *)
+                      else if skips = !skip_factor*options#merge_n2 then
+                          begin
+                          lenght_skip_sequence := 0;
+                          skip_factor := !skip_factor * 2;
+                          step := "fail";
+                          true
+                          end
+                      else if !step = "fail" then (* ie. fail sequence is performing *)
+                           true
+                      else if !step = "skip"  then (* ie. skip sequence is performing *)
+                           false
+                      else raise (InternalError "perform_test for Merge_static");
     in
 
     (* Check if two states can be merged *)
@@ -1540,7 +1562,14 @@ let merge state_space queue =
             data_recorder_merging#add_data (if merged then "Y" else "N");
 
             (* Merge algorithm *)
-            if merged then lenght_fail_sequence:=0 else lenght_fail_sequence := !lenght_fail_sequence + 1;
+            if merged
+                then
+                    begin
+                    lenght_fail_sequence:=0;
+                    skip_factor := 1;
+                    end
+                else
+                    lenght_fail_sequence := !lenght_fail_sequence + 1;
 
             (* Return result *)
             merged
